@@ -214,6 +214,7 @@
       <div>
         <h1 id="home-greeting">Bonjour Diane <span class="accent">✦</span></h1>
         <p id="home-subtitle">Chargement...</p>
+        <p id="home-cycle-badge" style="font-size:11px;color:var(--amber);margin-top:2px;font-weight:600;"></p>
       </div>
     </div>
   </div>
@@ -266,11 +267,14 @@
   </div>
   <div class="scroll-body">
     <div class="content">
-      <div class="section-label">Niveau d'énergie</div>
-      <div class="fatigue-row">
-        <div class="ftog sel" id="tog-n" onclick="toggleFatigue('n')">Forme normale</div>
-        <div class="ftog" id="tog-f" onclick="toggleFatigue('f')">Je suis fatiguée</div>
+      <div class="section-label">Comment tu te sens aujourd'hui ?</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px;">
+        <button onclick="setNiveau(0)" id="niv-btn-0" class="niv-btn" style="padding:10px 6px;border-radius:8px;border:1.5px solid var(--border-mid);font-size:12px;cursor:pointer;background:var(--bg);text-align:center;line-height:1.4;">😴 Journée difficile<br><span style="font-size:10px;color:var(--text-muted);">5 min</span></button>
+        <button onclick="setNiveau(1)" id="niv-btn-1" class="niv-btn" style="padding:10px 6px;border-radius:8px;border:1.5px solid var(--border-mid);font-size:12px;cursor:pointer;background:var(--bg);text-align:center;line-height:1.4;">🌿 Fatiguée<br><span style="font-size:10px;color:var(--text-muted);">N1 · doux</span></button>
+        <button onclick="setNiveau(2)" id="niv-btn-2" class="niv-btn" style="padding:10px 6px;border-radius:8px;border:1.5px solid var(--border-mid);font-size:12px;cursor:pointer;background:var(--bg);text-align:center;line-height:1.4;">☀️ Forme normale<br><span style="font-size:10px;color:var(--text-muted);">N2 · standard</span></button>
+        <button onclick="setNiveau(3)" id="niv-btn-3" class="niv-btn" style="padding:10px 6px;border-radius:8px;border:1.5px solid var(--border-mid);font-size:12px;cursor:pointer;background:var(--bg);text-align:center;line-height:1.4;">⚡ Bonne énergie<br><span style="font-size:10px;color:var(--text-muted);">N3 · intensifié</span></button>
       </div>
+      <button onclick="setNiveau(4)" id="niv-btn-4" class="niv-btn" style="width:100%;padding:10px 6px;border-radius:8px;border:1.5px solid var(--border-mid);font-size:12px;cursor:pointer;background:var(--bg);text-align:center;margin-bottom:12px;line-height:1.4;">🔥 Très bonne énergie · N4 · challenge doux</button>
       <div class="card">
         <div class="card-title">⏱ Échauffement · 1 min</div>
         <div class="ex-row"><span class="ex-name">Rotations des hanches</span><span class="ex-detail">30 sec</span></div>
@@ -505,6 +509,16 @@
         <div class="measure-row"><span>Durée max</span><span class="measure-val">10 min/jour</span></div>
       </div>
       <div class="card">
+        <div class="card-title">📈 Mon cycle de progression</div>
+        <p style="font-size:12px;color:var(--text-muted);margin-bottom:12px;line-height:1.5;">Change de cycle tous les ~2 mois, quand les séances te semblent trop faciles. Le niveau du jour se choisit à chaque séance.</p>
+        <div style="display:flex;gap:8px;">
+          <button onclick="setCycle(1)" id="cycle-btn-1" style="flex:1;padding:10px 4px;border-radius:8px;border:1.5px solid var(--border-mid);font-size:13px;font-weight:600;cursor:pointer;background:var(--bg);">Cycle 1<br><span style="font-size:10px;font-weight:400;color:var(--text-muted);">Installer</span></button>
+          <button onclick="setCycle(2)" id="cycle-btn-2" style="flex:1;padding:10px 4px;border-radius:8px;border:1.5px solid var(--border-mid);font-size:13px;font-weight:600;cursor:pointer;background:var(--bg);">Cycle 2<br><span style="font-size:10px;font-weight:400;color:var(--text-muted);">Progresser</span></button>
+          <button onclick="setCycle(3)" id="cycle-btn-3" style="flex:1;padding:10px 4px;border-radius:8px;border:1.5px solid var(--border-mid);font-size:13px;font-weight:600;cursor:pointer;background:var(--bg);">Cycle 3<br><span style="font-size:10px;font-weight:400;color:var(--text-muted);">Confirmer</span></button>
+        </div>
+        <div id="cycle-desc" style="margin-top:10px;font-size:12px;color:var(--mid-green);background:var(--light-green);border-radius:8px;padding:8px 10px;line-height:1.5;"></div>
+      </div>
+      <div class="card">
         <div class="card-title">📅 Activités existantes</div>
         <div class="measure-row"><span>Lundi</span><span style="font-size:13px;color:var(--text-muted)">Pilates</span></div>
         <div class="measure-row"><span>Mardi</span><span style="font-size:13px;color:var(--text-muted)">Aquagym</span></div>
@@ -635,6 +649,59 @@ var prevScreen = 's-home';
 var DAYS = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
 var SHORT_DAYS = ['D','L','M','M','J','V','S'];
 
+// Grille volumes : [séries, reps] par [cycle][niveau] (1-indexé)
+// niveau 0 = version 5min urgence
+var VOLUMES = {
+  bras: {
+    0: { series: 1, reps: 8, duree: null },   // 5min urgence
+    11: { series: 2, reps: 10 }, 12: { series: 3, reps: 10 },
+    13: { series: 3, reps: 12 }, 14: { series: 3, reps: 15 },
+    21: { series: 3, reps: 10 }, 22: { series: 3, reps: 12 },
+    23: { series: 3, reps: 15 }, 24: { series: 4, reps: 15 },
+    31: { series: 3, reps: 12 }, 32: { series: 3, reps: 15 },
+    33: { series: 4, reps: 15 }, 34: { series: 4, reps: 15, tempo: true },
+  },
+  cuisses: {
+    0: { series: 1, reps: 8, duree: null },
+    11: { series: 2, reps: 10 }, 12: { series: 3, reps: 10 },
+    13: { series: 3, reps: 12 }, 14: { series: 3, reps: 15 },
+    21: { series: 3, reps: 10 }, 22: { series: 3, reps: 12 },
+    23: { series: 3, reps: 15 }, 24: { series: 4, reps: 15 },
+    31: { series: 3, reps: 12 }, 32: { series: 3, reps: 15 },
+    33: { series: 4, reps: 15 }, 34: { series: 4, reps: 15, tempo: true },
+  },
+  chaise: {
+    0: { duree: 20 },
+    11: { duree: 20 }, 12: { duree: 30 },
+    13: { duree: 40 }, 14: { duree: 45 },
+    21: { duree: 30 }, 22: { duree: 40 },
+    23: { duree: 45 }, 24: { duree: 60 },
+    31: { duree: 40 }, 32: { duree: 50 },
+    33: { duree: 60 }, 34: { duree: 60, tempo: true },
+  },
+  centre: {
+    0: null,
+    11: null, 12: null, 13: null, 14: null,
+    21: { series: 2, reps: 8 }, 22: { series: 2, reps: 10 },
+    23: { series: 3, reps: 10 }, 24: { series: 3, reps: 12 },
+    31: { series: 2, reps: 10 }, 32: { series: 3, reps: 10 },
+    33: { series: 3, reps: 12 }, 34: { series: 3, reps: 15 },
+  },
+};
+
+function getVol(type, cycle, niveau) {
+  var key = niveau === 0 ? 0 : (cycle * 10 + niveau);
+  return VOLUMES[type][key] || VOLUMES[type][0];
+}
+
+function fmtVol(vol, isTemps) {
+  if (!vol) return null;
+  if (isTemps || vol.duree) return vol.duree + 's';
+  var detail = vol.series + ' × ' + vol.reps;
+  if (vol.tempo) detail += ' (tempo lent)';
+  return detail;
+}
+
 var PROGRAMME = {
   1: { // Lundi
     focus: 'Pilates + Bras',
@@ -643,13 +710,13 @@ var PROGRAMME = {
       { icon: '🧘', name: 'Pilates', detail: 'Cours du soir', type: 'scheduled' },
     ],
     exercises: [
-      { id: 'curl', name: 'Curl biceps', detail: '3 × 12', acc: 'Haltères 1 kg' },
-      { id: 'rowing', name: 'Rowing haltères', detail: '3 × 12', acc: 'Haltères 1 kg' },
-      { id: 'elev-lat', name: 'Élévations latérales', detail: '3 × 12', acc: 'Haltères 1 kg' },
+      { id: 'curl', name: 'Curl biceps', detail: '3 × 12', acc: 'Haltères 1 kg', volType: 'bras' },
+      { id: 'rowing', name: 'Rowing haltères', detail: '3 × 12', acc: 'Haltères 1 kg', volType: 'bras' },
+      { id: 'elev-lat', name: 'Élévations latérales', detail: '3 × 12', acc: 'Haltères 1 kg', volType: 'bras' },
     ],
     fatigueExercises: [
-      { id: 'curl', name: 'Curl biceps', detail: '2 × 10', acc: 'Haltères 1 kg' },
-      { id: 'elev-lat', name: 'Élévations latérales', detail: '2 × 10', acc: 'Haltères 1 kg' },
+      { id: 'curl', name: 'Curl biceps', detail: '2 × 10', acc: 'Haltères 1 kg', volType: 'bras' },
+      { id: 'elev-lat', name: 'Élévations latérales', detail: '2 × 10', acc: 'Haltères 1 kg', volType: 'bras' },
     ],
     kcal: '70–90 kcal', kcalFatigue: '45–60 kcal',
     tags: ['Bras', 'Haltères', '10 min'],
@@ -661,13 +728,13 @@ var PROGRAMME = {
       { icon: '🏊', name: 'Aquagym', detail: 'Cours du matin', type: 'scheduled' },
     ],
     exercises: [
-      { id: 'squat', name: 'Squats', detail: '3 × 12', acc: null },
-      { id: 'pont', name: 'Ponts fessiers', detail: '3 × 15', acc: 'Ballon yoga entre les genoux' },
-      { id: 'marche-lat', name: 'Marche latérale', detail: '2 × 30s', acc: 'Élastique au-dessus des genoux' },
+      { id: 'squat', name: 'Squats', detail: '3 × 12', acc: null, volType: 'cuisses' },
+      { id: 'pont', name: 'Ponts fessiers', detail: '3 × 15', acc: 'Ballon yoga entre les genoux', volType: 'cuisses' },
+      { id: 'marche-lat', name: 'Marche latérale', detail: '2 × 30s', acc: 'Élastique au-dessus des genoux', volType: 'cuisses' },
     ],
     fatigueExercises: [
-      { id: 'pont', name: 'Ponts fessiers', detail: '2 × 10', acc: 'Ballon yoga' },
-      { id: 'cerceau', name: 'Cerceau adducteurs', detail: '2 × 12', acc: 'Cerceau de Pilates' },
+      { id: 'pont', name: 'Ponts fessiers', detail: '2 × 10', acc: 'Ballon yoga', volType: 'cuisses' },
+      { id: 'cerceau', name: 'Cerceau adducteurs', detail: '2 × 12', acc: 'Cerceau de Pilates', volType: 'cuisses' },
     ],
     kcal: '85–110 kcal', kcalFatigue: '50–65 kcal',
     tags: ['Cuisses', 'Fessiers', '10 min'],
@@ -679,13 +746,13 @@ var PROGRAMME = {
       { icon: '🚶', name: 'Marche rapide', detail: '20 à 30 min', type: 'cardio' },
     ],
     exercises: [
-      { id: 'dev-epaules', name: 'Développé épaules', detail: '3 × 12', acc: 'Haltères 1 kg' },
-      { id: 'curl', name: 'Curl biceps', detail: '3 × 12', acc: 'Haltères 1 kg' },
-      { id: 'rowing', name: 'Rowing haltères', detail: '3 × 12', acc: 'Haltères 1 kg' },
+      { id: 'dev-epaules', name: 'Développé épaules', detail: '3 × 12', acc: 'Haltères 1 kg', volType: 'bras' },
+      { id: 'curl', name: 'Curl biceps', detail: '3 × 12', acc: 'Haltères 1 kg', volType: 'bras' },
+      { id: 'rowing', name: 'Rowing haltères', detail: '3 × 12', acc: 'Haltères 1 kg', volType: 'bras' },
     ],
     fatigueExercises: [
-      { id: 'elev-lat', name: 'Élévations latérales', detail: '2 × 10', acc: 'Haltères 1 kg' },
-      { id: 'curl', name: 'Curl biceps', detail: '2 × 10', acc: 'Haltères 1 kg' },
+      { id: 'elev-lat', name: 'Élévations latérales', detail: '2 × 10', acc: 'Haltères 1 kg', volType: 'bras' },
+      { id: 'curl', name: 'Curl biceps', detail: '2 × 10', acc: 'Haltères 1 kg', volType: 'bras' },
     ],
     kcal: '70–90 kcal', kcalFatigue: '45–55 kcal',
     tags: ['Bras', 'Épaules', '10 min'],
@@ -697,15 +764,15 @@ var PROGRAMME = {
       { icon: '🚶', name: 'Marche rapide', detail: '20 à 30 min', type: 'cardio' },
     ],
     exercises: [
-      { id: 'squat', name: 'Squats', detail: '3 × 12', acc: null },
-      { id: 'pont', name: 'Ponts fessiers', detail: '3 × 15', acc: 'Ballon yoga entre les genoux' },
-      { id: 'marche-lat', name: 'Marche latérale', detail: '2 × 30s', acc: 'Élastique au-dessus des genoux' },
-      { id: 'chaise', name: 'Chaise contre le mur', detail: '2 × 30s', acc: null },
+      { id: 'squat', name: 'Squats', detail: '3 × 12', acc: null, volType: 'cuisses' },
+      { id: 'pont', name: 'Ponts fessiers', detail: '3 × 15', acc: 'Ballon yoga entre les genoux', volType: 'cuisses' },
+      { id: 'marche-lat', name: 'Marche latérale', detail: '2 × 30s', acc: 'Élastique au-dessus des genoux', volType: 'cuisses' },
+      { id: 'chaise', name: 'Chaise contre le mur', detail: '2 × 30s', acc: null, volType: 'chaise', isTemps: true },
     ],
     fatigueExercises: [
-      { id: 'pont', name: 'Ponts fessiers', detail: '2 × 10', acc: 'Ballon yoga' },
-      { id: 'cerceau', name: 'Cerceau adducteurs', detail: '2 × 12', acc: 'Cerceau de Pilates' },
-      { id: 'chaise', name: 'Chaise contre le mur', detail: '1 × 30s', acc: null },
+      { id: 'pont', name: 'Ponts fessiers', detail: '2 × 10', acc: 'Ballon yoga', volType: 'cuisses' },
+      { id: 'cerceau', name: 'Cerceau adducteurs', detail: '2 × 12', acc: 'Cerceau de Pilates', volType: 'cuisses' },
+      { id: 'chaise', name: 'Chaise contre le mur', detail: '1 × 30s', acc: null, volType: 'chaise', isTemps: true },
     ],
     kcal: '85–110 kcal', kcalFatigue: '50–65 kcal',
     tags: ['Cuisses', 'Fessiers', '10 min'],
@@ -717,13 +784,13 @@ var PROGRAMME = {
       { icon: '🚶', name: 'Marche rapide', detail: '20 à 30 min', type: 'cardio' },
     ],
     exercises: [
-      { id: 'dev-epaules', name: 'Développé épaules', detail: '3 × 12', acc: 'Haltères 1 kg' },
-      { id: 'elev-lat', name: 'Élévations latérales', detail: '3 × 12', acc: 'Haltères 1 kg' },
-      { id: 'rowing', name: 'Rowing haltères', detail: '3 × 12', acc: 'Haltères 1 kg' },
+      { id: 'dev-epaules', name: 'Développé épaules', detail: '3 × 12', acc: 'Haltères 1 kg', volType: 'bras' },
+      { id: 'elev-lat', name: 'Élévations latérales', detail: '3 × 12', acc: 'Haltères 1 kg', volType: 'bras' },
+      { id: 'rowing', name: 'Rowing haltères', detail: '3 × 12', acc: 'Haltères 1 kg', volType: 'bras' },
     ],
     fatigueExercises: [
-      { id: 'curl', name: 'Curl biceps', detail: '2 × 10', acc: 'Haltères 1 kg' },
-      { id: 'elev-lat', name: 'Élévations latérales', detail: '2 × 10', acc: 'Haltères 1 kg' },
+      { id: 'curl', name: 'Curl biceps', detail: '2 × 10', acc: 'Haltères 1 kg', volType: 'bras' },
+      { id: 'elev-lat', name: 'Élévations latérales', detail: '2 × 10', acc: 'Haltères 1 kg', volType: 'bras' },
     ],
     kcal: '70–90 kcal', kcalFatigue: '45–55 kcal',
     tags: ['Bras', 'Épaules', '10 min'],
@@ -735,13 +802,13 @@ var PROGRAMME = {
       { icon: '🚶', name: 'Marche ou repos actif', detail: 'À ton rythme', type: 'cardio' },
     ],
     exercises: [
-      { id: 'pont', name: 'Ponts fessiers', detail: '3 × 15', acc: 'Ballon yoga entre les genoux' },
-      { id: 'cerceau', name: 'Cerceau adducteurs', detail: '3 × 15', acc: 'Cerceau de Pilates' },
-      { id: 'chaise', name: 'Chaise contre le mur', detail: '2 × 30s', acc: null },
+      { id: 'pont', name: 'Ponts fessiers', detail: '3 × 15', acc: 'Ballon yoga entre les genoux', volType: 'cuisses' },
+      { id: 'cerceau', name: 'Cerceau adducteurs', detail: '3 × 15', acc: 'Cerceau de Pilates', volType: 'cuisses' },
+      { id: 'chaise', name: 'Chaise contre le mur', detail: '2 × 30s', acc: null, volType: 'chaise', isTemps: true },
     ],
     fatigueExercises: [
-      { id: 'pont', name: 'Ponts fessiers', detail: '2 × 10', acc: 'Ballon yoga' },
-      { id: 'cerceau', name: 'Cerceau adducteurs', detail: '2 × 10', acc: 'Cerceau de Pilates' },
+      { id: 'pont', name: 'Ponts fessiers', detail: '2 × 10', acc: 'Ballon yoga', volType: 'cuisses' },
+      { id: 'cerceau', name: 'Cerceau adducteurs', detail: '2 × 10', acc: 'Cerceau de Pilates', volType: 'cuisses' },
     ],
     kcal: '70–90 kcal', kcalFatigue: '45–55 kcal',
     tags: ['Cuisses', 'Fessiers', 'Doux'],
@@ -753,11 +820,11 @@ var PROGRAMME = {
       { icon: '🧘', name: 'Yoga', detail: 'Cours du dimanche', type: 'scheduled' },
     ],
     exercises: [
-      { id: 'curl', name: 'Curl biceps', detail: '2 × 10', acc: 'Haltères 1 kg' },
-      { id: 'elev-lat', name: 'Élévations latérales', detail: '2 × 10', acc: 'Haltères 1 kg' },
+      { id: 'curl', name: 'Curl biceps', detail: '2 × 10', acc: 'Haltères 1 kg', volType: 'bras' },
+      { id: 'elev-lat', name: 'Élévations latérales', detail: '2 × 10', acc: 'Haltères 1 kg', volType: 'bras' },
     ],
     fatigueExercises: [
-      { id: 'elev-lat', name: 'Élévations latérales', detail: '1 × 10', acc: 'Haltères 1 kg' },
+      { id: 'elev-lat', name: 'Élévations latérales', detail: '1 × 10', acc: 'Haltères 1 kg', volType: 'bras' },
     ],
     kcal: '40–55 kcal', kcalFatigue: '20–30 kcal',
     tags: ['Bras léger', 'Repos actif', '5–10 min'],
@@ -877,6 +944,34 @@ var FICHES = {
     ],
     tip: '💡 Si tu sens que tu "te balances" pour monter, allège encore le mouvement. L\'amplitude compte plus que le poids.',
   },
+  'dead-bug': {
+    title: 'Dead bug',
+    subtitle: 'Centre · Gainage profond · Allongée au sol',
+    tags: ['tag-green:Gainage profond', 'tag-green:Transverse', 'tag-green:Doux dos'],
+    acc: [],
+    steps: [
+      "Allonge-toi sur le dos, genoux pliés à 90°, bras tendus vers le plafond, jambes en table.",
+      "Inspire. En expirant, étends lentement le bras droit et la jambe gauche vers le sol sans les poser.",
+      "Garde le bas du dos collé au sol tout au long du mouvement — c'est le point clé.",
+      "Reviens au centre en inspirant, puis alterne avec le bras gauche et la jambe droite.",
+      "Le mouvement est lent et contrôlé. Si le dos se décolle, réduis l'amplitude.",
+    ],
+    tip: "💡 Parfait pour les genoux désaxés — renforce le transverse qui stabilise tout le bassin sans solliciter les rotules.",
+  },
+  'bird-dog': {
+    title: 'Bird dog',
+    subtitle: 'Centre · Gainage · À quatre pattes',
+    tags: ['tag-green:Gainage', 'tag-green:Équilibre', 'tag-green:Dos'],
+    acc: [],
+    steps: [
+      "À quatre pattes, poignets sous les épaules, genoux sous les hanches. Dos plat comme une table.",
+      "Inspire. En expirant, étends le bras droit et la jambe gauche simultanément.",
+      "Maintiens 2-3 secondes, bassin stable — ne laisse pas les hanches basculer.",
+      "Reviens au centre doucement et alterne côtés.",
+      "Si les poignets sont inconfortables, fait l'exercice sur les poings fermés.",
+    ],
+    tip: "💡 Alternative si gêne aux poignets : fais le dead bug à la place, l'effet sur le centre est équivalent.",
+  },
   'dev-epaules': {
     title: 'Développé épaules',
     subtitle: 'Épaules · Triceps · Haltères 1 kg',
@@ -903,6 +998,76 @@ var MOTIS_GENERIQUES = [
 ];
 
 // ═══════════════════════════════════════
+// CYCLE & NIVEAU
+// ═══════════════════════════════════════
+
+var currentCycle = parseInt(DB.get('cycle') || '1');
+var currentNiveau = 2; // défaut: N2 forme normale
+
+var CYCLE_DESCS = {
+  1: "Volumes de base — installer la régularité. Idéal pour commencer ou après une pause.",
+  2: "Volumes augmentés — consolider les acquis et progresser en douceur.",
+  3: "Volumes confirmés — tenir la durée et affiner la technique avec tempo.",
+};
+
+var KCAL_TABLE = {
+  0: '30–50', 1: '50–70', 2: '70–90', 3: '85–110', 4: '100–120'
+};
+
+function setCycle(c) {
+  currentCycle = c;
+  DB.set('cycle', String(c));
+  updateCycleUI();
+}
+
+function updateCycleUI() {
+  [1,2,3].forEach(function(c) {
+    var btn = document.getElementById('cycle-btn-'+c);
+    if (!btn) return;
+    btn.style.background = c === currentCycle ? 'var(--green)' : 'var(--bg)';
+    btn.style.color = c === currentCycle ? 'var(--cream)' : 'var(--text)';
+    btn.style.borderColor = c === currentCycle ? 'var(--green)' : 'var(--border-mid)';
+    var span = btn.querySelector('span');
+    if (span) span.style.color = c === currentCycle ? 'rgba(245,239,227,0.7)' : 'var(--text-muted)';
+  });
+  var desc = document.getElementById('cycle-desc');
+  if (desc) desc.textContent = CYCLE_DESCS[currentCycle] || '';
+  // Mettre à jour le badge accueil
+  var badge = document.getElementById('home-cycle-badge');
+  if (badge) badge.textContent = 'Cycle ' + currentCycle + ' · Niveau ' + currentNiveau;
+}
+
+function setNiveau(n) {
+  currentNiveau = n;
+  updateNiveauUI();
+  renderSeanceList();
+}
+
+function updateNiveauUI() {
+  [0,1,2,3,4].forEach(function(n) {
+    var btn = document.getElementById('niv-btn-'+n);
+    if (!btn) return;
+    var sel = n === currentNiveau;
+    btn.style.background = sel ? 'var(--green)' : 'var(--bg)';
+    btn.style.color = sel ? 'var(--cream)' : 'var(--text)';
+    btn.style.borderColor = sel ? 'var(--green)' : 'var(--border-mid)';
+  });
+  var badge = document.getElementById('home-cycle-badge');
+  if (badge) badge.textContent = 'Cycle ' + currentCycle + (currentNiveau > 0 ? ' · N' + currentNiveau : ' · 5 min');
+  // Mettre à jour kcal
+  var kcalEl = document.getElementById('seance-kcal');
+  if (kcalEl) kcalEl.textContent = (KCAL_TABLE[currentNiveau] || '70–90') + ' kcal estimés';
+}
+
+function buildExDetail(ex, cycle, niveau) {
+  // Choisit les volumes selon le type d'exercice et la grille
+  var type = ex.volType || 'bras';
+  var vol = getVol(type, cycle, niveau);
+  if (!vol) return ex.detail; // fallback si pas de vol (ex: centre en C1)
+  return fmtVol(vol, ex.isTemps);
+}
+
+// ═══════════════════════════════════════
 // NAVIGATION
 // ═══════════════════════════════════════
 
@@ -912,6 +1077,7 @@ function goTo(id, resetDay) {
   document.getElementById(id).classList.add('active');
   if (id === 's-prog') renderProgres();
   if (id === 's-mindset') renderMindset();
+  if (id === 's-profil') setTimeout(updateCycleUI, 50);
   if (id === 's-home') { if (resetDay) viewDayOffset = 0; renderHome(); }
   if (id === 's-seance') renderSeance();
   if (id === 's-bravo') renderBravo();
@@ -973,6 +1139,7 @@ function getDynamicMoti() {
 }
 
 function renderHome() {
+  currentCycle = parseInt(DB.get('cycle') || '1');
   var viewed = getViewedProg();
   var prog = viewed.prog;
   var d = viewed.date;
@@ -1046,6 +1213,7 @@ function renderHome() {
 
   // Dynamic moti — always based on today's real count
   document.getElementById('home-moti').textContent = getDynamicMoti();
+  updateCycleUI();
 }
 
 // ═══════════════════════════════════════
@@ -1057,21 +1225,37 @@ function renderSeance() {
   var d = new Date();
   document.getElementById('seance-title').textContent = 'Séance · ' + DAYS[d.getDay()];
   document.getElementById('seance-subtitle').textContent = prog.subtitle;
-  pendingFatigue = false;
-  document.getElementById('tog-n').classList.add('sel');
-  document.getElementById('tog-f').classList.remove('sel');
-  renderSeanceList(false);
+  updateNiveauUI();
+  renderSeanceList();
 }
 
-function renderSeanceList(fatigue) {
+function renderSeanceList() {
   var prog = getTodayProg();
-  var exs = fatigue ? prog.fatigueExercises : prog.exercises;
+  var exs = currentNiveau === 0 ? prog.exercises.slice(0, 2) : prog.exercises;
   var list = document.getElementById('seance-list');
   list.innerHTML = '';
   exs.forEach(function(ex){
-    list.innerHTML += '<div class="ex-row" onclick="showFiche(\''+ex.id+'\')"><span class="ex-name">'+ex.name+'</span><span class="ex-meta"><span class="ex-detail">'+ex.detail+'</span>'+(ex.acc ? '<span class="ex-acc">'+ex.acc+'</span>' : '')+'</span><span class="ex-arrow">›</span></div>';
+    var detail = buildExDetail(ex, currentCycle, currentNiveau);
+    if (!detail) return;
+    list.innerHTML += '<div class="ex-row" onclick="showFiche(\''+ex.id+'\')">'+
+      '<span class="ex-name">'+ex.name+'</span>'+
+      '<span class="ex-meta"><span class="ex-detail">'+detail+'</span>'+
+      (ex.acc ? '<span class="ex-acc">'+ex.acc+'</span>' : '')+
+      '</span><span class="ex-arrow">›</span></div>';
   });
-  document.getElementById('seance-kcal').textContent = (fatigue ? prog.kcalFatigue : prog.kcal) + ' estimés';
+  // Dead bug en C2+ pour séances cuisses/fessiers
+  if (currentCycle >= 2 && currentNiveau > 0 && prog.focus.indexOf('Cuisses') >= 0) {
+    var centreVol = getVol('centre', currentCycle, currentNiveau);
+    if (centreVol) {
+      list.innerHTML += '<div class="ex-row" onclick="showFiche(\'dead-bug\')">'+
+        '<span class="ex-name">Dead bug</span>'+
+        '<span class="ex-meta"><span class="ex-detail">'+fmtVol(centreVol, false)+'</span>'+
+        '<span class="ex-acc">Centre doux</span></span>'+
+        '<span class="ex-arrow">›</span></div>';
+    }
+  }
+  var kcalEl = document.getElementById('seance-kcal');
+  if (kcalEl) kcalEl.textContent = (KCAL_TABLE[currentNiveau] || '70–90') + ' kcal estimés';
 }
 
 function toggleFatigue(mode) {
@@ -1082,8 +1266,8 @@ function toggleFatigue(mode) {
 }
 
 function goToFatigue() {
+  currentNiveau = 1; // N1 = fatiguée
   goTo('s-seance');
-  toggleFatigue('f');
 }
 
 // ═══════════════════════════════════════
